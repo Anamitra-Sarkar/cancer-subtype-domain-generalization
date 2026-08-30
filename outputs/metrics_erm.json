@@ -1,0 +1,251 @@
+{
+  "method": "erm",
+  "random_split": {
+    "per_fold": [
+      {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            8
+          ]
+        ],
+        "n": 22
+      },
+      {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "confusion_matrix": [
+          [
+            8,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            7
+          ]
+        ],
+        "n": 22
+      },
+      {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            8,
+            0
+          ],
+          [
+            0,
+            0,
+            7
+          ]
+        ],
+        "n": 22
+      },
+      {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            7
+          ]
+        ],
+        "n": 21
+      },
+      {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            7
+          ]
+        ],
+        "n": 21
+      }
+    ],
+    "pooled": {
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "confusion_matrix": [
+        [
+          36,
+          0,
+          0
+        ],
+        [
+          0,
+          36,
+          0
+        ],
+        [
+          0,
+          0,
+          36
+        ]
+      ],
+      "n": 108
+    },
+    "mean_accuracy": 1.0,
+    "mean_macro_f1": 1.0
+  },
+  "lodo": {
+    "per_fold": [
+      {
+        "accuracy": 0.3333333333333333,
+        "macro_f1": 0.16666666666666666,
+        "confusion_matrix": [
+          [
+            12,
+            0,
+            0
+          ],
+          [
+            12,
+            0,
+            0
+          ],
+          [
+            12,
+            0,
+            0
+          ]
+        ],
+        "n": 36,
+        "held_out_domain": "cohort_A"
+      },
+      {
+        "accuracy": 0.8333333333333334,
+        "macro_f1": 0.8311212814645309,
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            5
+          ],
+          [
+            0,
+            11,
+            1
+          ],
+          [
+            0,
+            0,
+            12
+          ]
+        ],
+        "n": 36,
+        "held_out_domain": "cohort_B"
+      },
+      {
+        "accuracy": 0.6666666666666666,
+        "macro_f1": 0.5555555555555555,
+        "confusion_matrix": [
+          [
+            12,
+            0,
+            0
+          ],
+          [
+            0,
+            12,
+            0
+          ],
+          [
+            12,
+            0,
+            0
+          ]
+        ],
+        "n": 36,
+        "held_out_domain": "cohort_C"
+      }
+    ],
+    "pooled": {
+      "accuracy": 0.6111111111111112,
+      "macro_f1": 0.6086824029888042,
+      "confusion_matrix": [
+        [
+          31,
+          0,
+          5
+        ],
+        [
+          12,
+          23,
+          1
+        ],
+        [
+          24,
+          0,
+          12
+        ]
+      ],
+      "n": 108
+    },
+    "mean_accuracy": 0.6111111111111112,
+    "mean_macro_f1": 0.5177811678955844
+  },
+  "gap_accuracy": 0.38888888888888884,
+  "gap_macro_f1": 0.48221883210441563,
+  "n_domains": 3,
+  "domains": [
+    "cohort_A",
+    "cohort_B",
+    "cohort_C"
+  ],
+  "subtypes": [
+    "Luminal A",
+    "Luminal B",
+    "HER2-enriched"
+  ]
+}
