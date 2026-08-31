@@ -6,10 +6,10 @@ Domain-generalized PAM50 breast cancer subtyping (Parker et al. 2009 JCO). Goal:
 ## Components
 
 ### `data_pipeline/`
-- `dataset.py`: `ExpressionDataset` (X, y, domains, gene_names, subtype_names), `load_dataset()` for CSV/TSV with `--expression-path --subtype-labels-path --domain-labels-path`, `make_synthetic_dataset()` with injected subtype signal + domain batch shift.
+- `dataset.py`: `ExpressionDataset` (X, y, domains, gene_names, subtype_names), `load_dataset()` for CSV/TSV with `--expression-path --subtype-labels-path --domain-labels-path`, `make_synthetic_dataset()` with injected subtype signal + domain batch shift. Parser hardened for real-world file quirks: auto-sniffed delimiter (comma/tab/semicolon), BOM stripping, header auto-detection with/without leading `sample_id` column, quoted fields, whitespace-trimmed values, comment lines (`#`, `//`), blank lines, trailing commas, gene-names-from-header or `GENE_i` fallback, robust 1-col/2-col label file handling (header variants like `sample`/`id`/`label`/`cohort`/`batch` case-insensitive), sample-id–aware reordering, and explicit `ValueError` with row-level diagnostics (instead of opaque `assert`) for mismatched counts, non-numeric, or non-finite values. `gene_names_path` also handles comments and inline comma lists.
 - `splits.py`: `leave_one_domain_out_splits()` (required DG evaluation: train N-1, test held-out, no leakage — verified by disjoint domain sets) and `random_splits()` (optimistic stratified K-fold mixing domains).
-- `preprocessing.py`: `DomainStandardizer` — per-domain z-score (fit per domain, transform per domain; unseen domain fallback to global or transductive batch stats). Simple, well-established DG technique.
-- `cli.py`: real-data entry point; fails gracefully if files absent and prints TCGA/cBioPortal/GDC instructions.
+- `preprocessing.py`: `DomainStandardizer` — per-domain z-score (fit per domain, transform per domain; unseen domain fallback to global or transductive batch stats; zero-std safeguard `eps` -> 1.0). Simple, well-established DG technique. Supports single-sample inference and mixed batch sizes.
+- `cli.py`: real-data entry point; fails gracefully if files absent and prints TCGA/cBioPortal/GDC instructions; raises `FileNotFoundError`/`ValueError` with clear messages for malformed inputs.
 
 ### `src/` (model)
 - `classifier.py`: regularized multinomial logistic regression (`lbfgs`, `multi_class=multinomial`) and small MLP option.
@@ -18,13 +18,13 @@ Domain-generalized PAM50 breast cancer subtyping (Parker et al. 2009 JCO). Goal:
 - `train.py`: `train_and_evaluate`, `train_final_model` (saves `model_artifacts/model.pkl` + `metadata.json` for release gate).
 
 ### `backend/` (FastAPI)
-- `app.py`: endpoints `GET /health`, `GET /readiness` (honest model-loaded state), `GET /model-info` (503 if not released), `POST /predict` (503 if gate closed, 400 on gene-count mismatch), `GET /comparison` (serves `outputs/metrics.json` or honest placeholder).
-- `model_store.py`: fail-closed `ModelStore.try_load()` — only loads if `MODEL_RELEASE_APPROVED=true` and `APPROVED_ARTIFACT_REVISION` set and artifact exists; otherwise `loaded=false` and `error` string. Predictions abstain with 503 when not loaded.
+- `app.py`: endpoints `GET /health`, `GET /readiness` (honest model-loaded state), `GET /model-info` (503 if not released), `POST /predict` (503 if gate closed, 400 on gene-count mismatch, 422 on empty/non-finite/invalid expression via `field_validator`; strict `math.isfinite` check), `GET /comparison` (serves `outputs/metrics.json` or honest placeholder; returns 500 with detail if JSON is corrupt instead of crashing). Validation errors map to clean `400`/`422` JSON, not `500` stacks. `sample_id` length-capped at 256 chars.
+- `model_store.py`: fail-closed `ModelStore.try_load()` — only loads if `MODEL_RELEASE_APPROVED=true` and `APPROVED_ARTIFACT_REVISION` set and artifact exists; otherwise `loaded=false` and `error` string. Predictions abstain with 503 when not loaded; `predict()` validates finite, non-empty, exact `n_genes` match with `ValueError` → 400.
 - `auth.py`: Firebase-auth-shaped stub `verify_bearer_token` reading `FIREBASE_SERVICE_ACCOUNT_PATH` JSON; if absent and `REQUIRE_AUTH!=true`, open (sandbox); if required, 401 on missing/invalid bearer. Unit-tested with mocked verifier.
 
 ### `frontend/` (React + Vite + TypeScript)
-- `src/App.tsx`: scientific dashboard — header with model-ready badge, fail-closed banner matching `/readiness`, predict panel (expression paste, probability bars), comparison panel (random vs LODO accuracy/gap with honest "not yet computed" state), About box with citations.
-- Modern dark-header + card design, responsive grid, PAM50 pill colors.
+- `src/App.tsx`: scientific dashboard — header with model-ready badge, fail-closed banner matching `/readiness`, predict panel (expression paste, probability bars), comparison panel (random vs LODO accuracy/gap with honest "not yet computed" state), About box with citations. Hardened for a11y/responsive: skip-link, `<label>` + `aria-label`/`aria-describedby` on textarea, `role="alert"` + `aria-live` for errors/banners, `role="progressbar"` with `aria-valuenow` for probability bars, `aria-busy` during fetch, semantic `<main>`/`<section>` with `aria-labelledby`, keyboard focus-visible outlines, 480px/900px breakpoints with header `flex-wrap`.
+- Modern dark-header + card design, responsive grid, PAM50 pill colors, WCAG-improved contrast (`#0284c7` on white, `#475569` body copy, pill colors meet AA), focus rings (`outline: 3px solid #0284c7`), `sr-only` helpers.
 
 ## DG Methodology Choice
 

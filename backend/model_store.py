@@ -70,10 +70,21 @@ class ModelStore:
         subtype_names = artifact["subtype_names"]
         n_genes = artifact["n_genes"]
 
+        import math
+
         import numpy as np
 
+        if not expression:
+            raise ValueError("Expression vector must not be empty")
         if len(expression) != n_genes:
             raise ValueError(f"Expected {n_genes} genes, got {len(expression)}")
+        for idx, v in enumerate(expression):
+            try:
+                fv = float(v)
+            except (TypeError, ValueError):
+                raise ValueError(f"Expression value at index {idx} is not numeric: {v!r}")
+            if not math.isfinite(fv):
+                raise ValueError(f"Expression value at index {idx} is not finite (NaN or Inf): {v!r}")
 
         X = np.array(expression, dtype=float).reshape(1, -1)
         # Apply standardizer: handle both DomainStandardizer and dict (global)

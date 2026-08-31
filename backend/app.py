@@ -5,9 +5,13 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+import math
+
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, field_validator
 
 from backend.auth import verify_bearer_token
 from backend.model_store import store
@@ -35,9 +39,39 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # Return clean 422 with first error detail for usability, instead of raw traceback
+    # FastAPI already returns 422; we normalize to ensure finite-value errors are clear
+    return JSONResponse(status_code=422, content={"detail": str(exc.errors()[0].get("msg", "Validation error")) if exc.errors() else "Validation error"})
+
+
 class PredictRequest(BaseModel):
-    expression: list[float] = Field(..., description="Gene expression vector (length must match model n_genes)")
-    sample_id: str | None = None
+    expression: list[float] = Field(..., description="Gene expression vector (length must match model n_genes)", min_length=1, max_length=50000)
+    sample_id: str | None = Field(default=None, max_length=256, description="Optional sample identifier")
+
+    @field_validator("expression")
+    @classmethod
+    def validate_finite(cls, v: list[float]) -> list[float]:
+        if not v:
+            raise ValueError("Expression vector must not be empty")
+        for idx, x in enumerate(v):
+            if not isinstance(x, (int, float)):
+                raise ValueError(f"Expression value at index {idx} is not numeric: {x!r}")
+            if not math.isfinite(float(x)):
+                raise ValueError(f"Expression value at index {idx} is not finite (NaN or Inf): {x!r}")
+        return v
+
+    @field_validator("sample_id")
+    @classmethod
+    def validate_sample_id(cls, v: str | None) -> str | None:
+        if v is not None:
+            v = v.strip()
+            if v == "":
+                return None
+            if len(v) > 256:
+                raise ValueError("sample_id too long (max 256 chars)")
+        return v
 
 
 class PredictResponse(BaseModel):
@@ -102,8 +136,16 @@ def comparison():
 
     for p in [Path("outputs/metrics.json"), Path("model_artifacts/metrics.json"), Path("outputs/comparison.json")]:
         if p.exists():
-            with open(p) as f:
-                return json.load(f)
+            try:
+                with open(p) as f:
+                    data = json.load(f)
+                # Validate structure is dict
+                if not isinstance(data, dict):
+                    continue
+                return data
+            except (json.JSONDecodeError, OSError) as e:
+                # Corrupt file -> return honest error instead of raw 500
+                raise HTTPException(status_code=500, detail=f"Failed to read comparison metrics from {p}: {e}")
     # Return honest placeholder when not yet computed
     return {
         "message": "No comparison metrics computed yet. Run: python -m src.train or data_pipeline.cli with real data.",
