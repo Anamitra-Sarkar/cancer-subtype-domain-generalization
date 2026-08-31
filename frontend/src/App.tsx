@@ -74,6 +74,15 @@ export default function App() {
         </div>
       </header>
 
+      <section className="hero" aria-label="Hero illustration of breast cancer cell clusters">
+        <img
+          src="/hero.png"
+          alt="Stylized illustration of interconnected breast cancer cell clusters in warm coral, burgundy, navy and soft blue, lavender and pale yellow tones representing tumor heterogeneity and PAM50 subtype diversity, with thin curved lines connecting the clusters on a white background"
+          className="hero-image"
+          loading="eager"
+        />
+      </section>
+
       <main id="main-content" className="container" tabIndex={-1}>
         {readiness && !readiness.ready && (
           <div className="banner banner-warn" role="alert" aria-live="polite">
