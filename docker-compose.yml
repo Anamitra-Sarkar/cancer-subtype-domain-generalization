@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      # Release gate — OFF by default (safe, fail-closed). To enable predictions,
+      # set MODEL_RELEASE_APPROVED=true and APPROVED_ARTIFACT_REVISION to the
+      # approved model revision. See .env.example and docs/architecture.md.
+      MODEL_RELEASE_APPROVED: "${MODEL_RELEASE_APPROVED:-false}"
+      APPROVED_ARTIFACT_REVISION: "${APPROVED_ARTIFACT_REVISION:-}"
+      MODEL_ARTIFACT_PATH: "${MODEL_ARTIFACT_PATH:-model_artifacts/model.pkl}"
+      # Auth — disabled by default (sandbox/demo). Set REQUIRE_AUTH=true + FIREBASE_SERVICE_ACCOUNT_PATH for prod.
+      REQUIRE_AUTH: "${REQUIRE_AUTH:-false}"
+      FIREBASE_SERVICE_ACCOUNT_PATH: "${FIREBASE_SERVICE_ACCOUNT_PATH:-}"
+      PORT: "${PORT:-8000}"
+    volumes:
+      # Mount model artifacts read-only if present on host (optional)
+      - ./model_artifacts:/app/model_artifacts:ro
+      - ./outputs:/app/outputs:ro
+    restart: unless-stopped

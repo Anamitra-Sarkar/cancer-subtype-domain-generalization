@@ -12,7 +12,7 @@ type Comparison = {
   gap_macro_f1?: number
 }
 
-const API = ''
+const API = ((import.meta as unknown as { env: Record<string, string | undefined> }).env.VITE_API_URL)?.replace(/\/$/, '') ?? ''
 
 function pillClass(subtype: string): string {
   if (subtype.includes('Luminal A')) return 'pill-lumA'
