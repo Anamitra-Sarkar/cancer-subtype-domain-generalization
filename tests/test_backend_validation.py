@@ -45,15 +45,21 @@ def test_predict_empty_vector_returns_422(tmp_path):
 def test_predict_nan_returns_422_or_400(tmp_path):
     client, app_module, orig, ds = _get_client_with_model(tmp_path)
     try:
-        # JSON NaN is not valid JSON; send string that parses to NaN via python float('nan') not JSON serializable
-        # Instead send a large number that will be parsed as inf, or directly use null handling?
-        # We can test the model_store directly for NaN
         from backend.model_store import ModelStore
-        # Use string "NaN" won't be parsed as float by pydantic; need to test via direct model_store
-        # Test that non-finite via string "inf" style: pydantic may coerce
-        r = client.post("/predict", json={"expression": [float("inf")] * 6})
-        # json dumps inf may be null or error; if inf is serialized, pydantic validator should catch
+
+        # Infinity/NaN are not valid JSON, so httpx refuses to serialize them
+        # via `json=` (raises "Out of range float values are not JSON
+        # compliant") and the request would never reach the app. Send the raw
+        # body instead: Starlette parses it with json.loads, which does accept
+        # the `Infinity` literal, so the non-finite value really reaches the
+        # endpoint and we assert on the app's own validation behavior.
+        raw_inf = '{"expression": [%s]}' % ", ".join(["Infinity"] * 6)
+        r = client.post("/predict", content=raw_inf, headers={"Content-Type": "application/json"})
         assert r.status_code in (400, 422), f"Expected 400/422 for inf, got {r.status_code}: {r.text}"
+
+        raw_nan = '{"expression": [%s]}' % ", ".join(["NaN"] * 6)
+        r = client.post("/predict", content=raw_nan, headers={"Content-Type": "application/json"})
+        assert r.status_code in (400, 422), f"Expected 400/422 for NaN, got {r.status_code}: {r.text}"
         # Also test model_store directly
         with patch.dict(os.environ, {"MODEL_RELEASE_APPROVED": "true", "APPROVED_ARTIFACT_REVISION": "x", "MODEL_ARTIFACT_PATH": str(tmp_path / "art" / "model.pkl")}):
             s = ModelStore()
