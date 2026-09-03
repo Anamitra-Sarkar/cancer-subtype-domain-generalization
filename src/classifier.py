@@ -19,7 +19,6 @@ def make_classifier(
     """
     if kind == "logreg":
         return LogisticRegression(
-            multi_class="multinomial",
             solver="lbfgs",
             max_iter=1000,
             C=kwargs.get("C", 1.0),
