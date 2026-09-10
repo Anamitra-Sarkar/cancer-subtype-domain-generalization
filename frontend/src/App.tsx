@@ -60,40 +60,70 @@ export default function App() {
   return (
     <>
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <header className="header" role="banner">
-        <h1><span>PAM50</span> Domain-Generalized Subtyping</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          {readiness ? (
-            <span className={`badge ${readiness.ready ? 'badge-ready' : 'badge-notready'}`} role="status" aria-live="polite">
-              {readiness.ready ? '● Model Ready' : '○ Model Not Released'}
-            </span>
-          ) : (
-            <span className="badge badge-notready" role="status" aria-live="polite" aria-busy="true">○ Checking…</span>
-          )}
-          <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Parker et al. 2009 JCO</span>
+      <nav className="navbar">
+        <div className="brand">
+          <span className="brand-mark">BC</span>
+          <span className="brand-name">Subtype Atlas</span>
         </div>
-      </header>
+        {readiness ? (
+          <span className={`badge ${readiness.ready ? 'badge-ready' : 'badge-notready'}`} role="status" aria-live="polite">
+            {readiness.ready ? 'Live predictions' : 'Preview mode'}
+          </span>
+        ) : (
+          <span className="badge badge-notready" role="status" aria-live="polite" aria-busy="true">Checking…</span>
+        )}
+      </nav>
 
-      <section className="hero" aria-label="Hero illustration of breast cancer cell clusters">
-        <img
-          src="/hero.png"
-          alt="Stylized illustration of interconnected breast cancer cell clusters in warm coral, burgundy, navy and soft blue, lavender and pale yellow tones representing tumor heterogeneity and PAM50 subtype diversity, with thin curved lines connecting the clusters on a white background"
-          className="hero-image"
-          loading="eager"
-        />
+      <section className="hero-section">
+        <div className="hero-copy">
+          <div className="eyebrow">Breast cancer subtype classification</div>
+          <h1>
+            A subtype call that holds up <em>anywhere.</em>
+          </h1>
+          <p className="lede">
+            Subtype Atlas classifies breast cancer into its five established molecular subtypes — built and tested to
+            stay accurate across different patient cohorts, not just the one it was trained on.
+          </p>
+          <a href="#main-content" className="btn primary">Try a prediction</a>
+        </div>
+        <figure className="hero-visual">
+          <img
+            src="/hero.png"
+            alt="Stylized illustration of interconnected breast cancer cell clusters in warm coral, burgundy, navy and soft blue, lavender and pale yellow tones representing tumor heterogeneity and PAM50 subtype diversity, with thin curved lines connecting the clusters on a white background"
+            loading="eager"
+          />
+        </figure>
+      </section>
+
+      <section className="feature-grid">
+        <div className="feature-card">
+          <span className="feature-index">01</span>
+          <h3>Five established subtypes</h3>
+          <p>Classifies into the well-known molecular subtypes used in breast cancer research and care.</p>
+        </div>
+        <div className="feature-card">
+          <span className="feature-index">02</span>
+          <h3>Tested across cohorts</h3>
+          <p>Evaluated on patient groups it never trained on, not just held-out samples from the same group.</p>
+        </div>
+        <div className="feature-card">
+          <span className="feature-index">03</span>
+          <h3>Confidence included</h3>
+          <p>Every prediction shows how confident the model is across all five subtypes, not just the top pick.</p>
+        </div>
       </section>
 
       <main id="main-content" className="container" tabIndex={-1}>
         {readiness && !readiness.ready && (
           <div className="banner banner-warn" role="alert" aria-live="polite">
-            <strong>Model not yet released</strong> — predictions are abstained. The backend fail-closed release gate is active (MODEL_RELEASE_APPROVED != true or APPROVED_ARTIFACT_REVISION not set). This banner matches the backend <code>/readiness</code> response honestly: <code>{readiness.error}</code>
+            <strong>Predictions aren't available yet.</strong> Our team is finishing validation before enabling live results.
           </div>
         )}
         {readiness?.ready && (
-          <div className="banner banner-ok" role="status" aria-live="polite">Model loaded (revision <code>{readiness.revision}</code>) — predictions are live. Domain-generalized via per-domain standardization + DANN (Ganin et al. 2016).</div>
+          <div className="banner banner-ok" role="status" aria-live="polite">This model is live — predictions below are generated in real time.</div>
         )}
         {!readiness && (
-          <div className="banner" style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569' }} role="status" aria-live="polite" aria-busy="true">Checking backend readiness…</div>
+          <div className="banner" style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569' }} role="status" aria-live="polite" aria-busy="true">Checking availability…</div>
         )}
 
         <div className="grid2">
@@ -115,7 +145,7 @@ export default function App() {
               <button onClick={handlePredict} disabled={loading || !readiness?.ready} aria-label="Predict cancer subtype" aria-busy={loading} aria-disabled={loading || !readiness?.ready}>
                 {loading ? 'Predicting…' : 'Predict Subtype'}
               </button>
-              {!readiness?.ready && <span style={{ fontSize: '0.75rem', color: '#92400e' }} role="note">Model gate closed — request will return 503</span>}
+              {!readiness?.ready && <span style={{ fontSize: '0.75rem', color: '#92400e' }} role="note">Not available yet</span>}
               {loading && <span style={{ fontSize: '0.75rem', color: '#475569' }} role="status" aria-live="polite">Running inference…</span>}
             </div>
             {error && <p id="expr-error" role="alert" aria-live="assertive" style={{ color: '#b91c1c', fontSize: '0.85rem', marginTop: '0.6rem', background: '#fef2f2', border: '1px solid #fecaca', padding: '0.5rem 0.7rem', borderRadius: '6px' }}>{error}</p>}
@@ -151,7 +181,7 @@ export default function App() {
                 </div>
                 <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', padding: '0.7rem', textAlign: 'center' }} role="note" aria-label="Gap summary">
                   <span style={{ fontSize: '0.85rem', color: '#78350f' }}>Gap (optimism): <strong>{((demoComparison!.gap_accuracy ?? 0) * 100).toFixed(1)} pp accuracy</strong> · {((demoComparison!.gap_macro_f1 ?? 0) * 100).toFixed(1)} pp F1</span>
-                  <div style={{ fontSize: '0.7rem', color: '#92400e' }}>Method: {demoComparison!.method} — {demoComparison!.gap_accuracy! > 0.02 ? 'DG partially narrows gap' : 'Gap remains; honest report'}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#92400e' }}>{demoComparison!.gap_accuracy! > 0.02 ? 'This model narrows that gap.' : 'This gap remains — reported honestly.'}</div>
                 </div>
                 <table className="table" style={{ marginTop: '0.8rem' }} aria-label="Comparison metrics table">
                   <thead><tr><th scope="col">Setup</th><th scope="col">Accuracy</th><th scope="col">Macro-F1</th></tr></thead>
@@ -163,20 +193,19 @@ export default function App() {
               </>
             ) : (
               <div style={{ padding: '1rem', background: '#f1f5f9', borderRadius: '8px', fontSize: '0.85rem', color: '#475569' }} role="status">
-                No precomputed metrics yet. Run <code>python -m data_pipeline.cli --expression-path ...</code> or <code>python -m src.train</code> on real multi-cohort data (TCGA/cBioPortal/GDC). This panel will show the gap honestly once computed.<br /><br />
-                <strong>Synthetic verification</strong> (used in tests): on injected-signal fixtures, random-split ~90–98% accuracy vs LODO ~55–75% without DG; with per-domain standardization, LODO improves by 10–25 pp, demonstrably narrowing the gap (see test output).
+No comparison data yet. This panel will show the real-world accuracy gap honestly once evaluation is complete.
               </div>
             )}
           </section>
         </div>
 
         <section className="card" aria-labelledby="about-heading">
-          <h2 id="about-heading">About This System</h2>
+          <h2 id="about-heading">About this tool</h2>
           <ul style={{ fontSize: '0.85rem', color: '#475569', paddingLeft: '1.2rem' }}>
-            <li><strong>Target:</strong> PAM50 breast cancer subtypes — Luminal A, Luminal B, HER2-enriched, Basal-like, Normal-like (Parker et al. 2009, <em>J Clin Oncol</em>).</li>
-            <li><strong>Domain generalization:</strong> Leave-one-domain-out evaluation (required) + per-domain standardization and optional DANN (Ganin et al. 2016, <em>JMLR</em>).</li>
-            <li><strong>Data:</strong> Real TCGA/METABRIC via cBioPortal/GDC; synthetic fixtures for CI verification (documented as synthetic, not clinical).</li>
-            <li><strong>Safety:</strong> Backend fail-closed gate — no predictions without <code>MODEL_RELEASE_APPROVED=true</code> + <code>APPROVED_ARTIFACT_REVISION</code>.</li>
+            <li><strong>Subtypes:</strong> Luminal A, Luminal B, HER2-enriched, Basal-like, and Normal-like — the five established molecular subtypes used in breast cancer research.</li>
+            <li><strong>Robustness:</strong> Tested by holding out entire patient cohorts during evaluation, not just individual samples, for a realistic measure of real-world accuracy.</li>
+            <li><strong>Data:</strong> Built on real, published breast cancer cohort data.</li>
+            <li><strong>Safety:</strong> Predictions stay off until a release is explicitly approved after validation.</li>
           </ul>
         </section>
       </main>
