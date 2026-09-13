@@ -20,6 +20,7 @@ COPY data_pipeline/ ./data_pipeline/
 COPY src/ ./src/
 # ensure model_artifacts dir exists (empty until release gate approved)
 RUN mkdir -p model_artifacts outputs
+RUN chmod +x backend/entrypoint.sh
 # Fail-closed gate: no default approval; env vars must be explicitly set to enable model.
 # MODEL_RELEASE_APPROVED defaults to "false" in code; APPROVED_ARTIFACT_REVISION defaults to "".
 ENV MODEL_RELEASE_APPROVED=false
@@ -28,4 +29,4 @@ ENV MODEL_ARTIFACT_PATH=model_artifacts/model.pkl
 ENV PORT=8000
 EXPOSE 8000
 # Run uvicorn on the real entrypoint backend.app:app
-CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["./backend/entrypoint.sh"]
