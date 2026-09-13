@@ -13,13 +13,20 @@ function pillClass(subtype: string): string {
 
 export default function Predict() {
   const [readiness, setReadiness] = useState<Readiness | null>(null)
-  const [exprText, setExprText] = useState('0.5, -0.2, 1.1, -0.8, 0.3, 2.1, -1.0, 0.7, 0.4, -0.3, 1.5, -0.6, 0.9, 0.2, -1.2, 0.8, -0.4, 0.6, 1.0, -0.9')
+  const [nGenes, setNGenes] = useState<number | null>(null)
+  const [exprText, setExprText] = useState('')
   const [result, setResult] = useState<PredictResult | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetch(`${API}/readiness`).then(r => r.json()).then(setReadiness).catch(() => setReadiness({ ready: false, model_loaded: false, revision: null, error: 'API unreachable' }))
+    fetch(`${API}/model-info`).then(r => r.json()).then(j => {
+      if (j.n_genes) {
+        setNGenes(j.n_genes)
+        setExprText(Array.from({ length: j.n_genes }, (_, i) => (((i * 37) % 41) / 10 - 2).toFixed(1)).join(', '))
+      }
+    }).catch(() => {})
   }, [])
 
   async function handlePredict() {
@@ -42,21 +49,9 @@ export default function Predict() {
 
   return (
     <main id="main-content" className="container" tabIndex={-1} style={{ paddingTop: '2rem' }}>
-      {readiness && !readiness.ready && (
-        <div className="banner banner-warn" role="alert" aria-live="polite">
-          <strong>Predictions aren't available yet.</strong> Our team is finishing validation before enabling live results.
-        </div>
-      )}
-      {readiness?.ready && (
-        <div className="banner banner-ok" role="status" aria-live="polite">This model is live — predictions below are generated in real time.</div>
-      )}
-      {!readiness && (
-        <div className="banner" style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569' }} role="status" aria-live="polite" aria-busy="true">Checking availability…</div>
-      )}
-
       <section className="card" aria-labelledby="predict-heading">
         <h2 id="predict-heading">Predict Subtype</h2>
-        <p id="expr-help" style={{ fontSize: '0.8rem', color: '#475569', marginBottom: '0.6rem' }}>Paste a comma-separated expression vector (length must match model n_genes). Example: 20 genes demo. Values are z-score-normalized internally.</p>
+        <p id="expr-help" style={{ fontSize: '0.8rem', color: '#475569', marginBottom: '0.6rem' }}>Paste one expression value per model gene{nGenes ? ` (${nGenes} values, comma-separated)` : ''}, or use the example values already filled in.</p>
         <label htmlFor="expr-input" className="sr-only">Gene expression vector (comma-separated numeric values)</label>
         <textarea
           id="expr-input"
@@ -69,10 +64,9 @@ export default function Predict() {
           aria-invalid={!!error}
         />
         <div style={{ marginTop: '0.8rem', display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button onClick={handlePredict} disabled={loading || !readiness?.ready} aria-label="Predict cancer subtype" aria-busy={loading} aria-disabled={loading || !readiness?.ready}>
+          <button onClick={handlePredict} disabled={loading} aria-label="Predict cancer subtype" aria-busy={loading} aria-disabled={loading}>
             {loading ? 'Predicting…' : 'Predict Subtype'}
           </button>
-          {!readiness?.ready && <span style={{ fontSize: '0.75rem', color: '#92400e' }} role="note">Not available yet</span>}
           {loading && <span style={{ fontSize: '0.75rem', color: '#475569' }} role="status" aria-live="polite">Running inference…</span>}
         </div>
         {error && <p id="expr-error" role="alert" aria-live="assertive" style={{ color: '#b91c1c', fontSize: '0.85rem', marginTop: '0.6rem', background: '#fef2f2', border: '1px solid #fecaca', padding: '0.5rem 0.7rem', borderRadius: '6px' }}>{error}</p>}

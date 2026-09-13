@@ -5,7 +5,10 @@ import Predict from './pages/Predict'
 
 export type Readiness = { ready: boolean; model_loaded: boolean; revision: string | null; error: string | null }
 
-const API = ((import.meta as unknown as { env: Record<string, string | undefined> }).env.VITE_API_URL)?.replace(/\/$/, '') ?? ''
+const API = (
+  ((import.meta as unknown as { env: Record<string, string | undefined> }).env.VITE_API_URL) ||
+  'https://bhumika-tewari-282006-cancer-subtype-domain-gene-14f0a5b.hf.space'
+).replace(/\/$/, '')
 export { API }
 
 function Layout({ children }: { children: React.ReactNode }) {
